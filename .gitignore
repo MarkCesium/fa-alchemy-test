@@ -9,3 +9,5 @@ db.sqlite3
 media/
 .coverage
 htmlcov/
+
+.env
