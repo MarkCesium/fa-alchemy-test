@@ -1,12 +1,13 @@
 version: "3"
 services:
   database:
+    env_file: .env
     image: "postgres:13.3-alpine"
     container_name: notes_db
     environment:
-      POSTGRES_USER: notes_user
-      POSTGRES_PASSWORD: 12345
-      POSTGRES_DB: notes_db
+      POSTGRES_USER: "${DB_USER}"
+      POSTGRES_PASSWORD: "${DB_PASS}"
+      POSTGRES_DB: "${DB_NAME}"
       POSTGRES_HOST_AUTH_METHOD: trust
     ports:
       - "5432:5432"
