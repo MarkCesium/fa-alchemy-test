@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from .dependencies import get_note_by_id
 from .schemas import NoteCreate, NoteRead, NoteUpdate, NoteUpdateParial
 from . import crud
 from app.dependencies import session_dependency
@@ -25,63 +26,40 @@ async def create_note(
 
 
 @router.get("/{note_id}", status_code=status.HTTP_200_OK)
-async def read_note(
-    note_id: int,
-    session: AsyncSession = Depends(session_dependency),
-) -> NoteRead:
-    note = await crud.get_note(session=session, id=note_id)
-    if note == None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Note (ID: {note_id}) not found.",
-        )
+async def read_note(note: Note = Depends(get_note_by_id)) -> NoteRead:
     return note
 
 
 @router.put("/{note_id}", status_code=status.HTTP_201_CREATED)
 async def update_note(
-    note_id: int,
     note_data: NoteUpdate,
+    note: Note = Depends(get_note_by_id),
     session: AsyncSession = Depends(session_dependency),
 ) -> NoteRead:
-    note: Note = await crud.get_note(session=session, id=note_id)
-    if note == None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Note (ID: {note_id}) not found.",
-        )
-    return await crud.update_note(session=session, note_id=note_id, data=note_data)
-
-
-@router.patch("/{note_id}")
-async def update_note_partial(
-    note_id: int,
-    note_data: NoteUpdateParial,
-    session: AsyncSession = Depends(session_dependency),
-) -> NoteRead:
-    note: Note = await crud.get_note(session=session, id=note_id)
-    if note == None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Note (ID: {note_id}) not found.",
-        )
     return await crud.update_note(
-        session=session, note_id=note_id, data=note_data, partial=True
+        session=session,
+        note=note,
+        data=note_data,
     )
 
 
-@router.delete(
-    "/{note_id}",
-    status_code=status.HTTP_202_ACCEPTED,
-)
+@router.patch("/{note_id}", status_code=status.HTTP_201_CREATED)
+async def update_note_partial(
+    note_data: NoteUpdateParial,
+    note: Note = Depends(get_note_by_id),
+    session: AsyncSession = Depends(session_dependency),
+) -> NoteRead:
+    return await crud.update_note(
+        session=session,
+        note=note,
+        note_update=note_data,
+        partial=True,
+    )
+
+
+@router.delete("/{note_id}", status_code=status.HTTP_202_ACCEPTED)
 async def delete_note(
-    note_id: int,
+    note: Note = Depends(get_note_by_id),
     session: AsyncSession = Depends(session_dependency),
 ) -> None:
-    note: Note = await crud.get_note(session=session, id=note_id)
-    if note == None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Note (ID: {note_id}) not found.",
-        )
     await crud.delete_note(session=session, note=note)

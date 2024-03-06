@@ -12,6 +12,7 @@ async def get_notes(session: AsyncSession) -> list[Note]:
     return result.scalars()
 
 
+# It in use in dependencies.py
 async def get_note(session: AsyncSession, id: int) -> Note | None:
     return await session.get(Note, id)
 
@@ -23,14 +24,14 @@ async def create_note(session: AsyncSession, note: Note) -> None:
 
 async def update_note(
     session: AsyncSession,
-    note_id: int,
-    data: NoteUpdate | NoteUpdateParial,
+    note: Note,
+    note_update: NoteUpdate | NoteUpdateParial,
     partial: bool = False,
 ) -> Note:
-    note = await session.get(Note, note_id)
-    for name, value in data.model_dump(exclude_unset=partial).items():
+    for name, value in note_update.model_dump(exclude_unset=partial).items():
         setattr(note, name, value)
     await session.commit()
+
     return note
 
 
