@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from .schemas import NoteCreate, NoteRead, NoteUpdate, NoteUpdateParial
 from . import crud
-from app.dependencies import session
+from app.dependencies import session_dependency
 from app.core.models.notes import Note
 
 router: APIRouter = APIRouter(prefix="/notes", tags=["notes"])
@@ -10,7 +11,7 @@ router: APIRouter = APIRouter(prefix="/notes", tags=["notes"])
 
 @router.get("/", status_code=status.HTTP_200_OK)
 async def get_notes(
-    session=Depends(session),
+    session: AsyncSession = Depends(session_dependency),
 ) -> list[NoteRead]:
     return await crud.get_notes(session=session)
 
@@ -18,7 +19,7 @@ async def get_notes(
 @router.post("/", status_code=status.HTTP_201_CREATED)
 async def create_note(
     note: NoteCreate,
-    session=Depends(session),
+    session: AsyncSession = Depends(session_dependency),
 ) -> None:
     await crud.create_note(session=session, note=Note(**note.model_dump()))
 
@@ -26,7 +27,7 @@ async def create_note(
 @router.get("/{note_id}", status_code=status.HTTP_200_OK)
 async def read_note(
     note_id: int,
-    session=Depends(session),
+    session: AsyncSession = Depends(session_dependency),
 ) -> NoteRead:
     note = await crud.get_note(session=session, id=note_id)
     if note == None:
@@ -41,7 +42,7 @@ async def read_note(
 async def update_note(
     note_id: int,
     note_data: NoteUpdate,
-    session=Depends(session),
+    session: AsyncSession = Depends(session_dependency),
 ) -> NoteRead:
     note: Note = await crud.get_note(session=session, id=note_id)
     if note == None:
@@ -54,7 +55,9 @@ async def update_note(
 
 @router.patch("/{note_id}")
 async def update_note_partial(
-    note_id: int, note_data: NoteUpdateParial, session=Depends(session)
+    note_id: int,
+    note_data: NoteUpdateParial,
+    session: AsyncSession = Depends(session_dependency),
 ) -> NoteRead:
     note: Note = await crud.get_note(session=session, id=note_id)
     if note == None:
@@ -73,7 +76,7 @@ async def update_note_partial(
 )
 async def delete_note(
     note_id: int,
-    session=Depends(session),
+    session: AsyncSession = Depends(session_dependency),
 ) -> None:
     note: Note = await crud.get_note(session=session, id=note_id)
     if note == None:

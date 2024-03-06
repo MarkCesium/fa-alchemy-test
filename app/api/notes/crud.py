@@ -6,39 +6,34 @@ from app.core.models.notes import Note
 from .schemas import NoteUpdate, NoteUpdateParial
 
 
-async def get_notes(session: async_sessionmaker[AsyncSession]) -> list[Note]:
-    async with session() as sess:
-        query = select(Note).order_by(Note.id)
-        result: Result = await sess.execute(query)
-        return result.scalars()
+async def get_notes(session: AsyncSession) -> list[Note]:
+    query = select(Note).order_by(Note.id)
+    result: Result = await session.execute(query)
+    return result.scalars()
 
 
-async def get_note(session: async_sessionmaker[AsyncSession], id: int) -> Note | None:
-    async with session() as sess:
-        return await sess.get(Note, id)
+async def get_note(session: AsyncSession, id: int) -> Note | None:
+    return await session.get(Note, id)
 
 
-async def create_note(session: async_sessionmaker[AsyncSession], note: Note) -> None:
-    async with session() as sess:
-        sess.add(note)
-        await sess.commit()
+async def create_note(session: AsyncSession, note: Note) -> None:
+    session.add(note)
+    await session.commit()
 
 
 async def update_note(
-    session: async_sessionmaker[AsyncSession],
+    session: AsyncSession,
     note_id: int,
     data: NoteUpdate | NoteUpdateParial,
     partial: bool = False,
 ) -> Note:
-    async with session() as sess:
-        note = await sess.get(Note, note_id)
-        for name, value in data.model_dump(exclude_unset=partial).items():
-            setattr(note, name, value)
-        await sess.commit()
-        return note
+    note = await session.get(Note, note_id)
+    for name, value in data.model_dump(exclude_unset=partial).items():
+        setattr(note, name, value)
+    await session.commit()
+    return note
 
 
-async def delete_note(session: async_sessionmaker[AsyncSession], note: Note):
-    async with session() as sess:
-        await sess.delete(note)
-        await sess.commit()
+async def delete_note(session: AsyncSession, note: Note):
+    await session.delete(note)
+    await session.commit()
