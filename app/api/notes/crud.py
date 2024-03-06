@@ -3,6 +3,7 @@ from sqlalchemy import select
 from sqlalchemy.engine import Result
 
 from app.core.models.notes import Note
+from .schemas import NoteUpdate, NoteUpdateParial
 
 
 async def get_notes(session: async_sessionmaker[AsyncSession]) -> list[Note]:
@@ -23,12 +24,18 @@ async def create_note(session: async_sessionmaker[AsyncSession], note: Note) -> 
         await sess.commit()
 
 
-async def update_note(session: async_sessionmaker[AsyncSession], note_id: int, data):
+async def update_note(
+    session: async_sessionmaker[AsyncSession],
+    note_id: int,
+    data: NoteUpdate | NoteUpdateParial,
+    partial: bool = False,
+) -> Note:
     async with session() as sess:
         note = await sess.get(Note, note_id)
-        note.title = data.title
-        note.content = data.content
+        for name, value in data.model_dump(exclude_unset=partial).items():
+            setattr(note, name, value)
         await sess.commit()
+        return note
 
 
 async def delete_note(session: async_sessionmaker[AsyncSession], note: Note):

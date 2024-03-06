@@ -18,3 +18,10 @@ class NoteCreate(BaseModel):
 
 class NoteUpdate(NoteCreate):
     pass
+
+
+class NoteUpdateParial(BaseModel):
+    title: str | None = None
+    content: str | None = None
+
+    model_config = ConfigDict(from_attributes=True)

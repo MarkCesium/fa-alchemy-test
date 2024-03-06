@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from .schemas import NoteCreate, NoteRead, NoteUpdate
+from .schemas import NoteCreate, NoteRead, NoteUpdate, NoteUpdateParial
 from . import crud
 from app.dependencies import session
 from app.core.models.notes import Note
@@ -27,7 +27,7 @@ async def create_note(
 async def read_note(
     note_id: int,
     session=Depends(session),
-):
+) -> NoteRead:
     note = await crud.get_note(session=session, id=note_id)
     if note == None:
         raise HTTPException(
@@ -42,14 +42,29 @@ async def update_note(
     note_id: int,
     note_data: NoteUpdate,
     session=Depends(session),
-) -> None:
+) -> NoteRead:
     note: Note = await crud.get_note(session=session, id=note_id)
     if note == None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Note (ID: {note_id}) not found.",
         )
-    await crud.update_note(session=session, note_id=note_id, data=note_data)
+    return await crud.update_note(session=session, note_id=note_id, data=note_data)
+
+
+@router.patch("/{note_id}")
+async def update_note_partial(
+    note_id: int, note_data: NoteUpdateParial, session=Depends(session)
+) -> NoteRead:
+    note: Note = await crud.get_note(session=session, id=note_id)
+    if note == None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Note (ID: {note_id}) not found.",
+        )
+    return await crud.update_note(
+        session=session, note_id=note_id, data=note_data, partial=True
+    )
 
 
 @router.delete(
